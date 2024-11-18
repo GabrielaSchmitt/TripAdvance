@@ -1,5 +1,5 @@
-streamlit==1.31.0
-pymongo==4.6.1
-pandas==2.2.0
-openpyxl==3.1.2
-bcrypt==4.1.2
+streamlit
+pymongo
+pandas
+openpyxl
+bcrypt

@@ -6,25 +6,27 @@ def login_register():
     db = get_db()
     users = db["users"]
 
-    # Tabs para alternar entre Login e Registro
+    # Tabs para Login e Registro
     tab1, tab2 = st.tabs(["Login", "Registrar-se"])
 
     # Aba de Login
     with tab1:
-        email = st.text_input("Email")
-        password = st.text_input("Senha", type="password")
+        email = st.text_input("Email", key="login_email").strip().lower() 
+        password = st.text_input("Senha", type="password", key="login_password")
         if st.button("Login"):
             user = users.find_one({"email": email})
             if user and check_password(password, user["password"]):
-                st.success(f"Bem-vindo, {user['name']}!")
+                st.session_state["logged_in"] = True
+                st.session_state["user_id"] = user["_id"]
+                st.success("Login realizado com sucesso!")
             else:
                 st.error("Email ou senha incorretos.")
 
     # Aba de Registro
     with tab2:
-        name = st.text_input("Nome")
-        email = st.text_input("Email")
-        password = st.text_input("Senha", type="password")
+        name = st.text_input("Nome", key="register_name").strip().lower() 
+        email = st.text_input("Email", key="register_email").strip().lower() 
+        password = st.text_input("Senha", type="password", key="register_password")
         if st.button("Registrar"):
             if users.find_one({"email": email}):
                 st.error("Email já cadastrado.")

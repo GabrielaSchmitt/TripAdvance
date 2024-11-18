@@ -1,12 +1,12 @@
 import streamlit as st
-from app.pages import _home, login_register, reset_password
+from app.pages import login_register, reset_password, home
 
 st.sidebar.title("Navegação")
-page = st.sidebar.radio("Ir para", ["Home", "Login/Registrar", "Alterar Senha"])
+page = st.sidebar.radio("Ir para", ["Login/Registrar", "Home", "Alterar Dados"])
 
-if page == "Home":
-    _home.display()
-elif page == "Login/Registrar":
+if page == "Login/Registrar":
     login_register.login_register()
-elif page == "Alterar Senha":
+elif page == "Home":
+    home.home()
+elif page == "Alterar Dados":
     reset_password.reset_password()
