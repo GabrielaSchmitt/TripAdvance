@@ -1,38 +1,41 @@
 import streamlit as st
 import pymongo
 
-# Initialize connection.
-# Uses st.cache_resource to only run once.
+# Initialize connection
 @st.cache_resource
 def init_connection():
-    client = pymongo.MongoClient(**st.secrets["mongo"])
-    # Send a ping to confirm a successful connection
+    mongo_secrets = st.secrets["mongo"]
+    uri = mongo_secrets["host"]
+    client = pymongo.MongoClient(uri)
+    
+    # Ping para verificar conexão
     try:
         client.admin.command('ping')
-        st.write("Pinged your deployment. You successfully connected to MongoDB!")
+        st.write("Pinged your deployment. Successfully connected to MongoDB!")
     except Exception as e:
         st.error(f"Failed to connect to MongoDB: {e}")
+        raise e
+
     return client
 
 client = init_connection()
 
-# Verify collections in the database.
-# Uses st.cache_data to only rerun after 10 min or if the database changes.
+# Acessar a coleção 'users' do banco de dados 'sample_mflix'
 @st.cache_data(ttl=600)
-def get_collections():
-    db = client.mydb
-    collections = db.list_collection_names()  # Fetch all collection names
-    return collections
+def get_sample_users():
+    db = client["sample_mflix"]  # Nome do database
+    collection = db["users"]  # Nome da coleção
+    return list(collection.find().limit(10))  # Buscar os 10 primeiros documentos
 
-collections = get_collections()
+users = get_sample_users()
 
-# Print results.
-if collections:
-    st.write("Collections in the database:")
-    for collection in collections:
-        st.write(f"- {collection}")
+# Exibir os resultados
+if users:
+    st.write("Users in sample_mflix.users:")
+    for user in users:
+        st.write(user)
 else:
-    st.write("No collections found in the database.")
+    st.write("No users found in the collection.")
 
 # import streamlit as st
 # import pymongo
