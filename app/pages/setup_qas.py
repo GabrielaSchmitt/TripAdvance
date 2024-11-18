@@ -12,9 +12,9 @@ def setup_tripadv_qas():
 
     # Criar um exemplo inicial na coleção
     example_user = {
-        "name": "Cersei Lannister",
-        "email": "lena_headey@gameofthron.es",
-        "password": "$2b$12$FExjgr7CLhNCa.oUsB9seub8mqcHzkJCFZ8heMc8CeIKOZfeTKP8m"
+        "name": "Crazy Frog",
+        "email": "frog.gmail.com",
+        "password": "$frog"
     }
     # Verificar se o exemplo já existe para evitar duplicações
     if users_collection.count_documents({"email": example_user["email"]}) == 0:
