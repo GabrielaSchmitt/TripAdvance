@@ -1,128 +1,224 @@
 import streamlit as st
-import pandas as pd
-from pymongo import MongoClient
-import bcrypt
-from datetime import datetime
+import pymongo
 
-# Configuração da conexão com MongoDB Atlas
-def get_database():
-    # Construindo a string de conexão do MongoDB Atlas usando os secrets
-    mongo_uri = f"mongodb+srv://{st.secrets['mongo']['username']}:{st.secrets['mongo']['password']}@{st.secrets['mongo']['host']}/?retryWrites=true&w=majority&appName={st.secrets['mongo']['cluster']}"
-    
+# Initialize connection.
+# Uses st.cache_resource to only run once.
+@st.cache_resource
+def init_connection():
+    client = pymongo.MongoClient(**st.secrets["mongo"])
+    # Send a ping to confirm a successful connection
     try:
-        client = MongoClient(mongo_uri)
-        # Teste a conexão
         client.admin.command('ping')
-        return client[st.secrets['mongo']['cluster']]
+        st.write("Pinged your deployment. You successfully connected to MongoDB!")
     except Exception as e:
-        st.error(f"Erro ao conectar com MongoDB: {str(e)}")
-        return None
+        st.error(f"Failed to connect to MongoDB: {e}")
+    return client
 
-# Funções de autenticação
-def hash_password(password):
-    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+client = init_connection()
 
-def check_password(password, hashed_password):
-    return bcrypt.checkpw(password.encode('utf-8'), hashed_password)
+# Verify collections in the database.
+# Uses st.cache_data to only rerun after 10 min or if the database changes.
+@st.cache_data(ttl=600)
+def get_collections():
+    db = client.mydb
+    collections = db.list_collection_names()  # Fetch all collection names
+    return collections
 
-def create_user(username, password):
-    db = get_database()
-    if not db:
-        return False, "Erro de conexão com o banco de dados"
+collections = get_collections()
+
+# Print results.
+if collections:
+    st.write("Collections in the database:")
+    for collection in collections:
+        st.write(f"- {collection}")
+else:
+    st.write("No collections found in the database.")
+
+# import streamlit as st
+# import pymongo
+# from pymongo import MongoClient
+# import bcrypt
+# from datetime import datetime
+# import re
+# import time
+# from streamlit.runtime.scriptrunner import add_script_run_ctx
+# import subprocess
+
+# # Configurações de segurança
+# MIN_PASSWORD_LENGTH = 8
+# MAX_LOGIN_ATTEMPTS = 3
+# LOGIN_TIMEOUT = 300  # 5 minutos em segundos
+
+# # Validações
+# def is_valid_email(email):
+#     pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+#     return re.match(pattern, email) is not None
+
+# def is_strong_password(password):
+#     """Verifica se a senha atende aos requisitos mínimos"""
+#     if len(password) < MIN_PASSWORD_LENGTH:
+#         return False, "Senha deve ter pelo menos 8 caracteres"
+#     if not re.search(r"[A-Z]", password):
+#         return False, "Senha deve conter pelo menos uma letra maiúscula"
+#     if not re.search(r"[a-z]", password):
+#         return False, "Senha deve conter pelo menos uma letra minúscula"
+#     if not re.search(r"\d", password):
+#         return False, "Senha deve conter pelo menos um número"
+#     if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+#         return False, "Senha deve conter pelo menos um caractere especial"
+#     return True, "Senha válida"
+
+# # Configuração do MongoDB
+# def get_database():
+#     mongo_uri = f"mongodb+srv://{st.secrets.mongo.username}:{st.secrets.mongo.password}@{st.secrets.mongo.host}/{st.secrets.mongo.cluster}?retryWrites=true&w=majority"
     
-    existing_user = db.users.find_one({'username': username})
-    if existing_user:
-        return False, "Usuário já existe"
-    
-    hashed_pw = hash_password(password)
-    db.users.insert_one({
-        'username': username,
-        'password': hashed_pw,
-        'created_at': datetime.now()
-    })
-    return True, "Usuário criado com sucesso"
+#     try:
+#         client = MongoClient(mongo_uri)
+#         client.admin.command('ping')
+#         return client[st.secrets.mongo.cluster]
+#     except Exception as e:
+#         st.error(f"Erro ao conectar ao MongoDB: {e}")
+#         return None
 
-def verify_login(username, password):
-    db = get_database()
-    if not db:
-        return False
-    
-    user = db.users.find_one({'username': username})
-    if user and check_password(password, user['password']):
-        return True
-    return False
+# def hash_password(password):
+#     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
-# Interface principal
-def main():
-    st.set_page_config(page_title="Sistema de Upload", layout="wide")
-    
-    # Tenta estabelecer conexão com o banco
-    db = get_database()
-    if not db:
-        st.error("Não foi possível conectar ao banco de dados. Verifique as configurações.")
-        return
-    
-    # Inicialização de estado da sessão
-    if 'logged_in' not in st.session_state:
-        st.session_state['logged_in'] = False
+# def check_password(password, hashed_password):
+#     return bcrypt.checkpw(password.encode('utf-8'), hashed_password)
 
-    if not st.session_state['logged_in']:
-        tab1, tab2 = st.tabs(["Login", "Registrar"])
-        
-        with tab1:
-            st.header("Login")
-            login_username = st.text_input("Usuário", key="login_username")
-            login_password = st.text_input("Senha", type="password", key="login_password")
+# def create_user(email, password):
+#     try:
+#         db = get_database()
+#         if db is not None:
+#             users = db.users
+#             # Verifica email
+#             if not is_valid_email(email):
+#                 return False, "Formato de email inválido"
             
-            if st.button("Entrar"):
-                if verify_login(login_username, login_password):
-                    st.session_state['logged_in'] = True
-                    st.success("Login realizado com sucesso!")
-                    st.rerun()
-                else:
-                    st.error("Usuário ou senha inválidos")
-        
-        with tab2:
-            st.header("Registrar")
-            reg_username = st.text_input("Usuário", key="reg_username")
-            reg_password = st.text_input("Senha", type="password", key="reg_password")
-            reg_password_confirm = st.text_input("Confirmar Senha", type="password", key="reg_password_confirm")
+#             # Verifica senha
+#             is_valid, message = is_strong_password(password)
+#             if not is_valid:
+#                 return False, message
             
-            if st.button("Registrar"):
-                if reg_password != reg_password_confirm:
-                    st.error("As senhas não coincidem")
-                else:
-                    success, message = create_user(reg_username, reg_password)
-                    if success:
-                        st.success(message)
-                    else:
-                        st.error(message)
+#             # Verifica se usuário existe
+#             existing_user = users.find_one({"email": email})
+#             if existing_user is not None:
+#                 return False, "Email já cadastrado"
+            
+#             # Cria novo usuário
+#             user_data = {
+#                 "email": email,
+#                 "password": hash_password(password),
+#                 "created_at": datetime.utcnow(),
+#                 "login_attempts": 0,
+#                 "last_login_attempt": None
+#             }
+#             users.insert_one(user_data)
+#             return True, "Usuário criado com sucesso"
+#         return False, "Erro na conexão com o banco de dados"
+#     except Exception as e:
+#         return False, f"Erro ao criar usuário: {str(e)}"
+
+# def login_user(email, password):
+#     try:
+#         db = get_database()
+#         if db is not None:
+#             users = db.users
+#             user = users.find_one({"email": email})
+            
+#             if user is None:
+#                 return False, "Email ou senha incorretos"
+            
+#             # Verifica bloqueio por tentativas
+#             if user.get('login_attempts', 0) >= MAX_LOGIN_ATTEMPTS:
+#                 last_attempt = user.get('last_login_attempt')
+#                 if last_attempt:
+#                     time_passed = (datetime.utcnow() - last_attempt).total_seconds()
+#                     if time_passed < LOGIN_TIMEOUT:
+#                         remaining = int(LOGIN_TIMEOUT - time_passed)
+#                         return False, f"Conta bloqueada. Tente novamente em {remaining} segundos"
+#                     else:
+#                         # Reset das tentativas após timeout
+#                         users.update_one(
+#                             {"email": email},
+#                             {"$set": {"login_attempts": 0}}
+#                         )
+            
+#             if check_password(password, user['password']):
+#                 # Reset das tentativas após login bem-sucedido
+#                 users.update_one(
+#                     {"email": email},
+#                     {
+#                         "$set": {
+#                             "login_attempts": 0,
+#                             "last_login": datetime.utcnow()
+#                         }
+#                     }
+#                 )
+#                 return True, "Login realizado com sucesso"
+#             else:
+#                 # Incrementa tentativas de login
+#                 users.update_one(
+#                     {"email": email},
+#                     {
+#                         "$inc": {"login_attempts": 1},
+#                         "$set": {"last_login_attempt": datetime.utcnow()}
+#                     }
+#                 )
+#                 return False, "Email ou senha incorretos"
+#         return False, "Erro na conexão com o banco de dados"
+#     except Exception as e:
+#         return False, f"Erro ao fazer login: {str(e)}"
+
+# def main():
+#     st.title("Sistema de Autenticação")
     
-    else:
-        st.header("Home Screen")
-        st.write("Bem-vindo ao sistema!")
+#     menu = ["Login", "Registrar"]
+#     choice = st.sidebar.selectbox("Menu", menu)
+    
+#     if choice == "Login":
+#         st.subheader("Login")
         
-        # Upload de arquivo Excel
-        uploaded_file = st.file_uploader("Escolha um arquivo Excel", type=['xlsx', 'xls'])
+#         email = st.text_input("Email")
+#         password = st.text_input("Senha", type='password')
         
-        if uploaded_file is not None:
-            try:
-                df = pd.read_excel(uploaded_file)
-                st.success("Arquivo carregado com sucesso!")
-                st.write("Preview dos dados:")
-                st.dataframe(df.head())
+#         if st.button("Login"):
+#             success, message = login_user(email, password)
+#             if success:
+#                 st.success(message)
+#                 st.session_state['logged_in'] = True
+#                 st.session_state['email'] = email
+#                 time.sleep(2)  # Pequeno delay para mostrar a mensagem de sucesso
+#                 st.switch_page("pages/pag1.py")
+#             else:
+#                 st.error(message)
                 
-                if st.button("Salvar dados no MongoDB"):
-                    records = df.to_dict('records')
-                    db.excel_data.insert_many(records)
-                    st.success("Dados salvos com sucesso no MongoDB!")
-            
-            except Exception as e:
-                st.error(f"Erro ao processar arquivo: {str(e)}")
+#     else:
+#         st.subheader("Criar Nova Conta")
         
-        if st.button("Logout"):
-            st.session_state['logged_in'] = False
-            st.rerun()
+#         with st.form("registro"):
+#             email = st.text_input("Email")
+#             password = st.text_input("Senha", type='password', 
+#                                   help="Mínimo 8 caracteres, incluindo maiúsculas, minúsculas, números e caracteres especiais")
+#             confirm_password = st.text_input("Confirmar Senha", type='password')
+            
+#             submit_button = st.form_submit_button("Registrar")
+            
+#             if submit_button:
+#                 if password != confirm_password:
+#                     st.error("As senhas não coincidem")
+#                 else:
+#                     success, message = create_user(email, password)
+#                     if success:
+#                         st.success(message)
+#                         time.sleep(2)  # Pequeno delay para mostrar a mensagem de sucesso
+#                         st.session_state['logged_in'] = True
+#                         st.session_state['email'] = email
+#                         st.switch_page("pages/pag1.py")
+#                     else:
+#                         st.error(message)
 
-if __name__ == "__main__":
-    main()
+# if __name__ == '__main__':
+#     if 'logged_in' not in st.session_state:
+#         st.session_state['logged_in'] = False
+#     main()
