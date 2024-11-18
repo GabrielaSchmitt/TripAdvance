@@ -1,7 +1,7 @@
 import streamlit as st
 from app.pages import login_register, reset_password, home
 
-st.sidebar.title("Navegação")
+st.sidebar.title("TripAdvance")
 page = st.sidebar.radio("Ir para", ["Login/Registrar", "Home", "Alterar Dados"])
 
 if page == "Login/Registrar":
