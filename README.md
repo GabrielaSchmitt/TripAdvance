@@ -15,7 +15,7 @@ TRIPADVANCE/
 │   ├── utils.py             # Funções auxiliares (ex: hash de senha)
 │   ├── setup_qas.py         # Script de configuração inicial do banco de dados
 │   └── pages/               # Páginas do Streamlit
-│       ├── _home.py         # Página inicial
+│       ├── home.py         # Página inicial
 │       ├── login_register.py # Página de login/registro
 │       ├── reset_password.py # Página para redefinir senha
 │
