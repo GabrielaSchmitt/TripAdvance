@@ -4,7 +4,19 @@ from app.utils import hash_password, check_password
 
 def login_register():
     db = get_db()
-    users = db["users"]
+    
+    if db is None:
+        st.error("Failed to connect to the database. Please try again later.")
+        return  # Stop further execution if the database is not connected
+
+    # Proceed if the connection is successful
+    try:
+        users = db["users"]  # Access the 'users' collection
+        st.write("Connected to the users collection!")
+        # Add further logic for login or registration
+    except Exception as e:
+        st.error("An error occurred while accessing the users collection.")
+        st.error(f"Details: {e}")
 
     # Tabs para Login e Registro
     tab1, tab2 = st.tabs(["Login", "Registrar-se"])
