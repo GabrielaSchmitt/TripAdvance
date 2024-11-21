@@ -8,7 +8,7 @@ from bson import ObjectId
 def setup_database():
     # Recuperar informações do MongoDB Atlas a partir de `st.secrets`
     mongo_secrets = st.secrets["mongo"]
-    uri = mongo_secrets["host"]
+    uri = f"mongodb+srv://{mongo_secrets['username']}:{mongo_secrets['password']}@{mongo_secrets['host']}/{mongo_secrets['cluster']}?retryWrites=true&w=majority"
     client = pymongo.MongoClient(uri)
     db = client["tripadv_qas"]  # Nome do banco de produção
 
@@ -66,7 +66,7 @@ def setup_database():
     models_collection.create_index(
         [("is_master", pymongo.ASCENDING)],
         unique=True,
-        partialFilterExpression={"is_master": True}  # Garante apenas um MASTER
+        partialFilterExpression={"is_master": False}  
     )
 
     models_collection.create_index(

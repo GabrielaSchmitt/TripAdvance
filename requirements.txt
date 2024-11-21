@@ -3,3 +3,5 @@ pymongo
 pandas
 openpyxl
 bcrypt
+scikit-learn
+matplotlib
