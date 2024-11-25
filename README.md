@@ -2,6 +2,8 @@
 
 <p> O TripAdvance é um projeto desenvolvido para otimizar e automatizar processos de análise e modelagem de dados relacionados a viagens. A aplicação combina a interface intuitiva do Streamlit, funcionalidades robustas de processamento de dados com Python, e uma infraestrutura de backend escalável com MongoDB e AWS. </p>
 
+<p> Acesse o aplicativo pelo link https://tripadvance.streamlit.app/ </p>
+
 ## Objetivo do Projeto
 <p> O TripAdvance foi projetado para auxiliar na ingestão, processamento, treinamento e gestão de modelos preditivos baseados em dados de viagens. Ele utiliza uma abordagem eficiente para manipular dados carregados pelos usuários, garantindo que: </p>
 
@@ -74,3 +76,12 @@ TRIPADVANCE/
 <p>No ambiente do MongoDB Atlas há uma função de trigger que dispara uma Step Function na AWS. Dentro da step function há 3 lambda functions pré-processamento -> treino -> salva modelo. Foi configurado um S3 como storage da AWS. </p>
 
 <p>A ideia é o trigger do mongo rodar todos os dias a meia noite, com uma lógica para verificar a tabela/collection "uploaded_files" juntando todos os arquivos do primeiro adicionado ao último, até que atinja um tamanho mínimo. Assim, é verificado se o horário atual é pertinente ( 00:00 - 06:00 ) para que não sobrecarregue o sistema durante o período em que os usuários estão utilizando, também garantindo a recursão para treinos em sequência particionados. No ambiente da AWS as step functions funcionam como um workflow, assim passará pelo preprocessamento garantindo a normalização dos dados, alimentando a função seguinte de treino que por sua vez processa os dados criando um modelo, e por fim salva o modelo retornando-o para o mongo_db na tabela/collection "models". Antes de salvar é feita uma lógica de comparação entre o modelo do banco cujo campo "MASTER" é verdadeiro, caso as métricas de acurácia do novo modelo se mostrem superiores, este novo modelo passa a ser "MASTER".</p>
+
+<p> ⚠️ o serviço esta desativado. Apesar do ambiente estar configurado, não foi testado completamente o uso do ambiente aws por dificuldades na configuração das layers, onde mesmo configurando as layers de modo personalizado, causava erro no uso de bibliotecas pandas e numpy nas lambdas. </p>
+
+### Coleta de Dados de Voos
+<p>Este projeto inclui um script de web scraping que utiliza a biblioteca Pyppeteer para coletar dados de voos no site MaxMilhas. O script automatiza a navegação por diversas rotas predefinidas, extraindo informações como data, cidade de origem, cidade de destino, companhia aérea, duração do voo e preço. Os dados coletados são armazenados em um arquivo CSV para análises posteriores. A implementação conta com técnicas de stealth para evitar detecção pelo site, além de mecanismos de tratamento de erros para garantir a robustez da coleta, mesmo em caso de falhas em elementos específicos.</p>
+
+<p> ⚠️ é necessario converter para xslt e ajustar colunas com dados divergentes </p>
+
+✨ Obrigada pela atenção! ✨
