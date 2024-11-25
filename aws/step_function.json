@@ -1,0 +1,21 @@
+{
+    "Comment": "Workflow de Treinamento de Modelo",
+    "StartAt": "PreprocessFiles",
+    "States": {
+      "PreprocessFiles": {
+        "Type": "Task",
+        "Resource": "arn:aws:lambda:sa-east-1:794038239675:function:preprocess-files-function",
+        "Next": "TrainModel"
+      },
+      "TrainModel": {
+        "Type": "Task",
+        "Resource": "arn:aws:lambda:sa-east-1:794038239675:function:ModelTrainingFunction",
+        "Next": "SaveModel"
+      },
+      "SaveModel": {
+        "Type": "Task",
+        "Resource": "arn:aws:lambda:sa-east-1:794038239675:function:SaveModelFunction",
+        "End": true
+      }
+    }
+  }
